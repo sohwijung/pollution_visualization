@@ -1,0 +1,30 @@
+<!DOCTYPE html> 
+  <head>
+     <meta charset="UTF-8">
+     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+     <script src="https://d3js.org/d3.v6.min.js"></script>
+     <script src="https://d3js.org/d3-array.v2.min.js"></script>
+     <script src="https://d3js.org/topojson.v2.min.js"></script>
+
+     <style>
+     </style>
+  </head>
+
+  <body>
+    <svg id="map" height="600" width="600" style="background: #fff; margin-top:50px" ></svg>
+    
+    <script>
+      const mapsvg = d3.select("#map");
+      const mapWidth = mapsvg.attr("width");
+      const mapHeight = mapsvg.attr("height");
+      const mapMargin = { top: 20, right: 20, bottom: 20, left:20};
+      const mapAreaWidth = mapWidth - mapMargin.left - mapMargin.right;
+      const mapAreaHeight = mapHeight - mapMargin.top - mapMargin.bottom;
+      const map = mapsvg.append("g")
+                    .attr("transform","translate("+mapMargin.left+","+mapMargin.top+")");
+    
+    </script>
+  </body>
+</html>

@@ -1,30 +1,327 @@
-<!DOCTYPE html> 
-  <head>
-     <meta charset="UTF-8">
-     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INFO 4310 - HW2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css">
+    <link rel="stylesheet" type="text/css" href="../css/skeleton.css">
+    <link rel="stylesheet" type="text/css" href="../css/custom-style.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/default.min.css">
+    <link rel="stylesheet" href="../css/hljs-base16.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
     
-     <script src="https://d3js.org/d3.v6.min.js"></script>
-     <script src="https://d3js.org/d3-array.v2.min.js"></script>
-     <script src="https://d3js.org/topojson.v2.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
 
-     <style>
-     </style>
-  </head>
+    <!-- TODO
+        1. Hover on legend filters
 
-  <body>
-    <svg id="map" height="600" width="600" style="background: #fff; margin-top:50px" ></svg>
-    
+        제프씨 헬프 유얼투두 <3
+        2. X Y Axis Label
+        3. Text Alignment on panel
+     -->
+    <style>
+        body {
+            background-color: black;
+        }
+
+        .gridlines line {
+            stroke: white;
+        }
+
+        .gridlines .domain {
+            stroke: black;
+        }
+            
+        #scatterplot {
+            float: left;
+        }
+        
+        #panel {
+            height:400px; 
+            width:400px; 
+            float:left; 
+            padding: 20 30 20 20;
+        }
+
+        #panel table {
+            color: white;
+            border-color: white;
+            border-radius: 5%;
+        }
+
+        table{
+            border: 1px solid;
+            padding: 10px;
+        }
+
+        table {
+            padding-left: 40px;
+        }
+
+        th, td {
+            padding-top: 15px;
+            padding-bottom: 15px;
+            padding-left: 40px;
+            padding-right: 40px;
+        }
+        
+        #panel h5 {
+            margin:0;
+            padding:0;
+        }
+        
+        #button-bar {
+            display: inline-block;
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        #main {
+            font-family: 'Open Sans', sans-serif;
+            color: #00643c;
+        }
+
+        button {
+            background-color: white;
+            color: #00643c;
+            border-color: #00643c;
+        }
+
+        .tick {
+            color: white;
+        }
+
+        #all {
+            display: flex;
+            flex-direction: row;
+        }
+
+        #graph_content {
+            width: 830px;
+            text-align: center;
+        }
+
+        .x_label {
+            color: white;
+        }
+
+        #legend {
+            color: white;
+        }
+
+        #legend .each_legend {
+            display: inline-block;
+            padding: none;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="main">Brewed for those who love coffee.</h1>
+    <div id="all">
+        <div id="graph_content">
+            <div id="legend"></div>
+
+            <svg id="scatterplot" height="550" width="800" style="float:left;">
+
+            </svg>
+            <div id="button-bar"></div>
+
+            
+        </div>
+
+        <div id="panel"></div>
+    </div>
+
     <script>
-      const mapsvg = d3.select("#map");
-      const mapWidth = mapsvg.attr("width");
-      const mapHeight = mapsvg.attr("height");
-      const mapMargin = { top: 20, right: 20, bottom: 20, left:20};
-      const mapAreaWidth = mapWidth - mapMargin.left - mapMargin.right;
-      const mapAreaHeight = mapHeight - mapMargin.top - mapMargin.bottom;
-      const map = mapsvg.append("g")
-                    .attr("transform","translate("+mapMargin.left+","+mapMargin.top+")");
+        const scatter = d3.select("svg#scatterplot");
+        const width = scatter.attr("width");
+        const height = scatter.attr("height");
+        const margin = {top: 15, right: 15, bottom: 40, left: 50};
+        const chartWidth = width - margin.left - margin.right;
+        const chartHeight = height - margin.top - margin.bottom;
     
+        let annotations = scatter.append("g").attr("id","annotations");
+        let chartArea = scatter.append("g").attr("id","points")
+                        .attr("transform","translate("+margin.left+","+margin.top+")");    
+    
+        const loadScatter = async function() {
+          let initial_data = await d3.csv("starbucks_drinkMenu_expanded.csv", d3.autoType );
+          let data = [];
+          let prep = new Set()
+          prep.add("All")
+          let check = new Set()
+          let sizes = ["Short", "Tall", "Grande", "Venti", "Solo", "Doppio"]
+          let categories = new Set()
+          console.log('i',initial_data)
+          initial_data.forEach( d=> {
+              data.push({
+                  'Beverage': String(d['Beverage']),
+                  'Beverage_category': String(d['Beverage_category']),
+                  'Beverage_prep': String(d['Beverage_prep']),
+                  'Caffeine (mg)': Number(d['Caffeine (mg)']),
+                  'Calories': Number(d['Calories']),
+                  'Calcium (% DV)': String(d[' Calcium (% DV) ']),
+                  'Protein (g)': Number(d[' Protein (g) ']),
+                  'Sodium (mg)': Number(d[' Sodium (mg)']),
+                  'Sugars (g)': Number(d[' Sugars (g)']),
+                  'Carbohydrates (g)': Number(d[' Total Carbohydrates (g) ']),
+                  'Total_Fat (g)': Number(d[' Total Fat (g)'])
+              })
+              let size = String(d['Beverage_prep']).split(" ")[0]
+              if (!sizes.includes(size) || String(d['Beverage_prep']) == "Grande Nonfat Milk") {
+                prep.add(String(d['Beverage_prep']));
+              }      
+              categories.add(String(d['Beverage_category']));
+
+          })
+            let calorieExtent = d3.extent(data, d => d['Calories']);
+            let calorieScale = d3.scaleLinear().domain(calorieExtent).range([chartHeight, 0]);
+            let caffeineExtent = d3.extent(data, d => d['Caffeine (mg)']);
+            let caffeineScale = d3.scaleLinear().domain(caffeineExtent).range([0, chartWidth]);
+            let categoryScale = d3.scaleOrdinal()
+                         .domain(categories)
+                         .range(["#469990", "#e6194b", "#ffe119", "#42d4f4", "#4363d8", "#911eb4", "#9a6324", "#808000", "#f58231"]);
+
+            let leftAxis = d3.axisLeft(calorieScale)
+                       .tickFormat(d3.format(""))
+            let leftGridlines = d3.axisLeft(calorieScale)
+                                    .tickSize(-chartWidth-10)
+                                    .tickFormat("")
+            let bottomAxis = d3.axisBottom(caffeineScale)
+                                .tickFormat(d3.format(""));
+            let bottomGridlines = d3.axisBottom(caffeineScale)
+                                    .tickSize(-chartHeight-10)
+                                    .tickFormat("")
+
+            annotations.append("g")
+                .attr("class", "y axis")
+                .attr("transform",`translate(${margin.left-10},${margin.top})`)
+                .call(leftAxis)
+            annotations.append("g")
+                .attr("class", "y gridlines")
+                .attr("transform",`translate(${margin.left-10},${margin.top})`)
+                .call(leftGridlines);
+            
+            annotations.append("g")
+                .attr("class", "x axis")
+                .attr("transform",`translate(${margin.left},${chartHeight+margin.top+10})`)
+                .call(bottomAxis);
+            annotations.append("g")
+                .attr("class", "x gridlines")
+                .attr("transform",`translate(${margin.left},${chartHeight+margin.top+10})`)
+                .call(bottomGridlines);
+            annotations.append("text")
+                .attr("class", "x_label")
+                // .attr("text-anchor", "end")
+                .attr("x", chartWidth)
+                .attr("y", chartHeight+60)
+                .text("Caffeine (mg)");
+            annotations.append("text")
+                .attr("class", "y_label")
+                // .attr("text-anchor", "end")
+                .attr("x", 0)
+                .attr("y", 0)
+                .text("Calories (cal)");
+            createCircles(data);
+
+            // Credit to Professor Jeff
+            let panelHeader = d3.select("#panel").append("h5");
+            let table = d3.select("#panel").append("table");
+            function updatePanel(row) {
+                let rowCopy = Object.assign({},row);
+                let title = rowCopy.title;
+                delete rowCopy.title;
+                panelHeader.text(title);
+                let kvPairs = Object.entries(rowCopy);
+                let rows = table.selectAll("tr").data(kvPairs)
+                                .join( enter => enter.append("tr"),
+                                        update => update.selectAll("td").remove(), 
+                                        exit => exit.remove() );
+                
+                rows.append("td").append("strong").text( d => d[0] );
+                rows.append("td").text( d => d[1] );
+            }
+            
+            prep.forEach( d => {
+                d3.select("div#button-bar")
+                .append("button")
+                .text( d )
+                .on("click", function() {
+                    updateCirclesAnimated( d );
+                })
+            });
+
+            function updateCirclesAnimated(prepKey) {
+                if (prepKey == "All") {
+                    createCircles(data);
+                } else {
+                    filtered_data =  data.filter((d) => {return d['Beverage_prep'].includes(prepKey) ; });
+                    console.log(filtered_data)
+                    createCircles(filtered_data);
+                }
+            }   
+            
+            function createCircles(data) {
+                circles = chartArea.selectAll("circle.point").data(data)
+                            .join(enter => enter.append("circle")
+                                                .attr("class","point")
+                                                .attr("opacity", 1)
+                                            )
+                            .attr("cx", d => caffeineScale(d['Caffeine (mg)']))
+                            .attr("cy", d => calorieScale(d['Calories']))
+                            .attr("r", d => 6)
+                            .attr("fill", d => categoryScale(d["Beverage_category"]) ) 
+                            .attr("label", d => d["Beverage"])
+                            .attr("genre", d => d["Beverage_category"]);
+
+
+                circles.on("mouseover", function(event, d) {
+                    d3.select(this)
+                    .transition().duration(200)
+                    .attr("stroke","white")
+                    .attr("stroke-width", 4)
+                    .attr("fill", categoryScale(d["Beverage_category"]) ) ;
+                
+                    updatePanel(d);
+                });
+            
+                circles.on("mouseout", function(event, d) {
+                    d3.select(this)
+                        .transition().duration(200)
+                        .attr("stroke","")
+                        .attr("stroke-width", 1)
+                        .attr("fill", categoryScale(d["Beverage_category"]) );
+                    updatePanel( {} );
+                });
+            }
+
+            let legend = d3.select("div#legend");
+            legend = legend.selectAll("div.row")
+                    .data(categoryScale.domain())
+                    .enter()
+                    .append("div")
+                    .style("padding", 8)
+                    .attr("class", "each_legend");
+
+            legend.append("svg").attr("width", 20).attr("height", 20)
+                .append("rect")
+                .attr("width", 16)
+                .attr("height", 16)
+                .attr('x', 0)
+                .attr('y', 3)
+                .attr("fill", categoryScale);
+
+            legend.append("text")
+                .text(function (d) { return d });
+        }
+        loadScatter();
     </script>
-  </body>
+    
+</body>
 </html>

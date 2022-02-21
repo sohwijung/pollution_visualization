@@ -27,6 +27,8 @@
     <style>
         body {
             background-color: black;
+            margin: 30px;
+            margin-top: 30px;
         }
 
         .gridlines line {
@@ -42,45 +44,30 @@
         }
         
         #panel {
-            height:350px; 
-            width:400px; 
-            float:left; 
+            height: 350px; 
+            width: 400px; 
+            float: left; 
             padding: 20 30 20 20;
         }
 
         #panel table {
             color: white;
-            border-collapse: collapse;
-            /* border-color: white;
-            border: 1px solid; */
-            /* padding: 10px; */
-            /* border-radius: 5%; */
-          
+            border-collapse: collapse;   
+            width: 400px;
         }
+
         #panel th, td{
             padding-top: 5px;
             padding-bottom: 15px;
             padding-left: 20px;
             padding-right: 20px;
-            
         }
+
         #panel tr{
             border-color: white;
             border: 1px solid;
            
         }
-
-        /* table{
-            border: 1px solid;
-            padding: 10px;
-        } */
-
-        /* th, td {
-            padding-top: 15px;
-            padding-bottom: 15px;
-            padding-left: 40px;
-            padding-right: 40px;
-        } */
         
         #panel h5 {
             margin:0;
@@ -91,7 +78,6 @@
             display: inline-block;
             margin: 0 auto;
             justify-content: center;
-            
         }
 
         #main {
@@ -140,15 +126,44 @@
             flex-direction: column;
             color: white;
         }
-        .slidecontainer input {
-          display: inline-block;
+
+        #slidecontainer {
+            padding: 10px;
+            width: 250px;
+            margin-left: 20px;
+            color: black;
+            background-color: white;
         }
 
-        .slidecontainer label {
-            display: inline-block;
-            float: left;
-            padding-left: 20px;
+        #textInput {
+            color: black;
+            margin-left: 20px;
         }
+
+        #caffeine_limit {
+            display: flex;
+        }
+
+        .clicked {
+            stroke: white;
+            stroke-width: 5;
+        }
+
+        #slide_top {
+            display: flex;
+        }
+
+        #clear_button {
+            font-size: 22px;
+            margin: 0 auto;
+            height: 85px;
+            width: 125px;
+        }
+
+        #clear {
+            margin: 0 auto;
+        }
+
     </style>
 </head>
 <body>
@@ -165,11 +180,25 @@
             
         </div>
         <div class = "right_side">
-            <div class="slidecontainer">
-                <label>Caffeine</label>
-              
-                <input type="range" value="50" class="slider"  min = "0" max = "410" id="myRange" >
+            <div id="slide_top">
+                <div id="slidecontainer" class="border border-light rounded">
+                    <div id="caffeine_limit">
+                        <p>Caffeine Limit:</p>
+                        <p id="textInput" value="410">410 mg</p>
+                    </div>
+
+                    <div id = "slider">
+                        <span>0</span>
+                        <input type="range" value="410" min = "0" max = "410" id="myRange" >
+                        <span>410 mg</span>
+                    </div>    
+                </div>
+
+                <div id="clear">
+                    <button id="clear_button" class="btn btn-outline-light">Clear All</button>
+                </div>
             </div>
+
             <div id="panel"></div>
         </div>
     </div>
@@ -214,8 +243,6 @@
                 prep.add(String(d['Beverage_prep']));
               }      
               categories.add(String(d['Beverage_category']));
-              console.log(d['Caffeine (mg)'])
-
           })
          
           let calorieExtent = d3.extent(data, d => d['Calories']);
@@ -224,7 +251,6 @@
           let caffeineScale = d3.scaleLinear().domain(caffeineExtent).range([0, chartWidth]);
           let sugarExtent = d3.extent(data, d => d['Sugars (g)']);
           let sugarScale = d3.scaleLinear().domain(sugarExtent).range([0, chartWidth]);
-          // let caffeineScale = d3.scaleLinear().domain(caffeineExtent).range([0, chartWidth]);
           let categoryScale = d3.scaleOrdinal()
                                 .domain(categories)
                                 .range(["#469990", "#e6194b", "#ffe119", "#42d4f4", "#4363d8", "#911eb4", "#9a6324", "#808000", "#f58231"]);
@@ -237,7 +263,7 @@
           let bottomGridlines = d3.axisBottom(sugarScale)
                                     .tickSize(-chartHeight-10)
                                     .tickFormat("")
-
+    
             annotations.append("g")
                 .attr("class", "y axis")
                 .attr("transform",`translate(${margin.left-10},${margin.top})`)
@@ -246,7 +272,6 @@
                 .attr("class", "y gridlines")
                 .attr("transform",`translate(${margin.left-10},${margin.top})`)
                 .call(leftGridlines);
-            
             annotations.append("g")
                 .attr("class", "x axis")
                 .attr("transform",`translate(${margin.left},${chartHeight+margin.top+10})`)
@@ -257,13 +282,12 @@
                 .call(bottomGridlines);
             annotations.append("text")
                 .attr("class", "x_label")
-                // .attr("text-anchor", "end")
                 .attr("x", chartWidth)
                 .attr("y", chartHeight+60)
-                .text("Caffeine (mg)");
+                .style("text-anchor", "middle")
+                .text("Sugar");
             annotations.append("text")
                 .attr("class", "y_label")
-                // .attr("text-anchor", "end")
                 .attr("x", 0)
                 .attr("y", 0)
                 .text("Calories (cal)");
@@ -287,26 +311,38 @@
                 rows.append("td").append("strong").text( d => d[0] );
                 rows.append("td").text( d => d[1] );
             }
+
+            let selected_prep = ""
             
             prep.forEach( d => {
                 d3.select("div#button-bar")
                 .append("button")
-                .attr("class", "btn btn-light")
+                .attr("class", "btn btn-outline-light prep")
                 .text( d )
                 .on("click", function() {
-                    updateCirclesAnimated( d );
+                    console.log(d);
+                    selected_prep = d;
+                    updateCirclesAnimated( d , document.getElementById("myRange").value);
                 })
             });
 
-            function updateCirclesAnimated(prepKey) {
+            // let preps = document.getElementsByClassName('prep');
+            // for (let prep of preps) {
+            //     prep.classList.remove('active')
+            //     prep.onclick = event => {
+            //         prep.classList.add('active')
+            //     }
+            // }
+
+            function updateCirclesAnimated(prepKey, caffeine_threshold) {
                 if (prepKey == "All") {
-                    createCircles(data);
+                    filtered_data = data.filter((d) => {return d['Caffeine (mg)'] <= caffeine_threshold; });
+                    createCircles(filtered_data);
                 } else {
-                    filtered_data =  data.filter((d) => {return d['Beverage_prep'].includes(prepKey) ; });
-                    console.log(filtered_data)
+                    filtered_data =  data.filter((d) => {return d['Beverage_prep'].includes(prepKey) && d['Caffeine (mg)'] <= caffeine_threshold; });
                     createCircles(filtered_data);
                 }
-            }   
+            }
             
             function createCircles(data) {
                 circles = chartArea.selectAll("circle.point").data(data)
@@ -321,24 +357,35 @@
                             .attr("label", d => d["Beverage"])
                             .attr("genre", d => d["Beverage_category"]);
 
-
                 circles.on("mouseover", function(event, d) {
                     d3.select(this)
                     .transition().duration(200)
                     .attr("stroke","white")
                     .attr("stroke-width", 4)
-                    .attr("fill", categoryScale(d["Beverage_category"]) ) ;
-                
-                    updatePanel(d);
+                    .style("cursor", "pointer");
                 });
-            
+
+                circles.on("click", function(event, d) {
+                    let clicked = document.getElementsByClassName('clicked');
+                    for (let click of clicked) {
+                        click.classList.remove('clicked')
+                    }
+                    d3.select(this)
+                    .attr("class", "clicked");
+
+                    if (d3.select("#panel")._groups.length >=1) {
+                        updatePanel( {} );
+                        updatePanel(d);
+                    } else {
+                        updatePanel(d);
+                    }
+                });
+
                 circles.on("mouseout", function(event, d) {
                     d3.select(this)
                         .transition().duration(200)
                         .attr("stroke","")
-                        .attr("stroke-width", 1)
-                        .attr("fill", categoryScale(d["Beverage_category"]) );
-                    updatePanel( {} );
+                        .attr("stroke-width", 1);
                 });
             }
 
@@ -361,14 +408,24 @@
             legend.append("text")
                 .text(function (d) { return d });
 
-        d3.select("#slider").attr("min", caffeineExtent[0]). attr("max", caffeineExtent[1]);
-        d3.select("#slider").on("input", function(){
-            createCircles(this.value);
-      
-         })
 
+        d3.select("#myRange").on("input", function(){
+            d3.select("#textInput").text(this.value + " mg")
+            updateCirclesAnimated(selected_prep, this.value);
+        })
 
-        
+        d3.select("#clear_button").on("click", function(){
+            createCircles(data);
+            updatePanel( {} );
+            document.getElementById("myRange").value = "410";
+            d3.select("#textInput").text("410 mg")
+
+            let clicked = document.getElementsByClassName('clicked');
+            for (let click of clicked) {
+                click.classList.remove('clicked')
+            }
+        })
+
 
         }
         loadScatter();

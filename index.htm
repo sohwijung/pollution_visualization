@@ -54,6 +54,9 @@
             padding-left: 20px;
             padding-right: 20px;
         }
+        #panel td {
+             width: 30%;
+        }
 
         #panel tr{
             border-color: white;
@@ -96,10 +99,6 @@
         #graph_content {
             width: 830px;
             text-align: center;
-        }
-
-        .x_label {
-            color: white;
         }
 
         #legend {
@@ -191,7 +190,7 @@
         const scatter = d3.select("svg#scatterplot");
         const width = scatter.attr("width");
         const height = scatter.attr("height");
-        const margin = {top: 15, right: 15, bottom: 40, left: 50};
+        const margin = {top: 15, right: 40, bottom: 40, left: 80};
         const chartWidth = width - margin.left - margin.right;
         const chartHeight = height - margin.top - margin.bottom;
     
@@ -265,16 +264,20 @@
                 .attr("class", "x gridlines")
                 .attr("transform",`translate(${margin.left},${chartHeight+margin.top+10})`)
                 .call(bottomGridlines);
-            annotations.append("text")
+            chartArea.append("text")
                 .attr("class", "x_label")
-                .attr("x", chartWidth)
-                .attr("y", chartHeight+60)
+                .attr("x", chartWidth+2)
+                .attr("y", chartHeight+15)
                 .style("text-anchor", "middle")
-                .text("Sugar");
-            annotations.append("text")
+                .attr("stroke", "white")
+                .style("font-size", 12)
+                .text("Sugar (g)");
+            chartArea.append("text")
                 .attr("class", "y_label")
-                .attr("x", 0)
+                .attr("x", -80)
                 .attr("y", 0)
+                .attr("stroke", "white")
+                .style("font-size", 12)
                 .text("Calories (cal)");
             createCircles(data);
 
@@ -383,7 +386,7 @@
                     .data(categoryScale.domain())
                     .enter()
                     .append("div")
-                    .style("padding", 8)
+                    .style("padding", 9)
                     .attr("class", "each_legend");
 
             legend.append("svg").attr("width", 20).attr("height", 20)

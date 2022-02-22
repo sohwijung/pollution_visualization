@@ -281,7 +281,6 @@
                 .text("Calories (cal)");
             createCircles(data);
 
-
             // Credit to Professor Jeff
             let panelHeader = d3.select("#panel").append("h5");
             let table = d3.select("#panel").append("table");
@@ -323,6 +322,10 @@
                 let clicked = document.getElementsByClassName('clicked');
                 let filtered_data;
                 for (let click of clicked) {
+                    if (click.getAttribute("caffeine") >= caffeine_threshold) {
+                        click.remove()
+                        updatePanel({});
+                    }
                     if (click.getAttribute("prep") != prepKey) {
                         click.remove()
                     }
@@ -347,6 +350,7 @@
                             .attr("fill", d => categoryScale(d["Category"]) ) 
                             .attr("label", d => d["Beverage"])
                             .attr("prep", d => d["Prep"])
+                            .attr("caffeine", d => d["Caffeine (mg)"])
                             .attr("genre", d => d["Category"]);
 
                 circles.on("mouseover", function(event, d) {

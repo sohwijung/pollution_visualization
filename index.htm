@@ -13,22 +13,14 @@
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/default.min.css">
     <link rel="stylesheet" href="../css/hljs-base16.css">
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
-    
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
 
-    <!-- TODO
-        1. Hover on legend filters
-
-        제프씨 헬프 유얼투두 <3
-        2. X Y Axis Label
-        3. Text Alignment on panel
-     -->
     <style>
         body {
             background-color: black;
             margin: 30px;
-            margin-top: 30px;
+            margin-top: 16px;
         }
 
         .gridlines line {
@@ -66,7 +58,6 @@
         #panel tr{
             border-color: white;
             border: 1px solid;
-           
         }
         
         #panel h5 {
@@ -81,14 +72,13 @@
         }
 
         #main {
+            -webkit-text-stroke: 0.6px white;
             font-family: 'Open Sans', sans-serif;
             color: #00643c;
         }
 
         button {
             background-color: white;
-            /* color: #00643c;
-            border-color: #00643c; */
             margin: 4px;
             padding: 6px;
             cursor: pointer;
@@ -163,7 +153,6 @@
         #clear {
             margin: 0 auto;
         }
-
     </style>
 </head>
 <body>
@@ -171,13 +160,8 @@
     <div id="all">
         <div id="graph_content">
             <div id="legend"></div>
-
-            <svg id="scatterplot" height="550" width="800" style="float:left;">
-
-            </svg>
+            <svg id="scatterplot" height="550" width="800" style="float:left;"></svg>
             <div id="button-bar"></div>
-
-            
         </div>
         <div class = "right_side">
             <div id="slide_top">
@@ -227,15 +211,15 @@
           initial_data.forEach( d=> {
               data.push({
                   'Beverage': String(d['Beverage']),
-                  'Beverage_category': String(d['Beverage_category']),
-                  'Beverage_prep': String(d['Beverage_prep']),
+                  'Category': String(d['Beverage_category']),
+                  'Prep': String(d['Beverage_prep']),
                   'Caffeine (mg)': Number(d['Caffeine (mg)']),
                   'Calories': Number(d['Calories']),
                   'Calcium (% DV)': String(d[' Calcium (% DV) ']),
                   'Protein (g)': Number(d[' Protein (g) ']),
                   'Sodium (mg)': Number(d[' Sodium (mg)']),
                   'Sugars (g)': Number(d[' Sugars (g)']),
-                  'Carbohydrates (g)': Number(d[' Total Carbohydrates (g) ']),
+                  'Carbs (g)': Number(d[' Total Carbohydrates (g) ']),
                   'Total_Fat (g)': Number(d[' Total Fat (g)'])
               })
               let size = String(d['Beverage_prep']).split(" ")[0]
@@ -251,6 +235,7 @@
           let caffeineScale = d3.scaleLinear().domain(caffeineExtent).range([0, chartWidth]);
           let sugarExtent = d3.extent(data, d => d['Sugars (g)']);
           let sugarScale = d3.scaleLinear().domain(sugarExtent).range([0, chartWidth]);
+          
           let categoryScale = d3.scaleOrdinal()
                                 .domain(categories)
                                 .range(["#469990", "#e6194b", "#ffe119", "#42d4f4", "#4363d8", "#911eb4", "#9a6324", "#808000", "#f58231"]);
@@ -320,28 +305,31 @@
                 .attr("class", "btn btn-outline-light prep")
                 .text( d )
                 .on("click", function() {
-                    console.log(d);
                     selected_prep = d;
-                    updateCirclesAnimated( d , document.getElementById("myRange").value);
+                    let clicked = document.getElementsByClassName('clicked');
+                    for (let click of clicked) {
+                        if (click.getAttribute("prep") != selected_prep) {
+                            updatePanel({});
+                        }
+                    }
+                    updateCirclesAnimated( selected_prep , document.getElementById("myRange").value);
                 })
             });
 
-            // let preps = document.getElementsByClassName('prep');
-            // for (let prep of preps) {
-            //     prep.classList.remove('active')
-            //     prep.onclick = event => {
-            //         prep.classList.add('active')
-            //     }
-            // }
-
             function updateCirclesAnimated(prepKey, caffeine_threshold) {
+                let clicked = document.getElementsByClassName('clicked');
+                let filtered_data;
+                for (let click of clicked) {
+                    if (click.getAttribute("prep") != prepKey) {
+                        click.remove()
+                    }
+                }
                 if (prepKey == "All") {
                     filtered_data = data.filter((d) => {return d['Caffeine (mg)'] <= caffeine_threshold; });
-                    createCircles(filtered_data);
                 } else {
-                    filtered_data =  data.filter((d) => {return d['Beverage_prep'].includes(prepKey) && d['Caffeine (mg)'] <= caffeine_threshold; });
-                    createCircles(filtered_data);
+                    filtered_data =  data.filter((d) => {return d['Prep'].includes(prepKey) && d['Caffeine (mg)'] <= caffeine_threshold; });
                 }
+                createCircles(filtered_data);
             }
             
             function createCircles(data) {
@@ -353,9 +341,10 @@
                             .attr("cx", d => sugarScale(d['Sugars (g)']))
                             .attr("cy", d => calorieScale(d['Calories']))
                             .attr("r", d => 6)
-                            .attr("fill", d => categoryScale(d["Beverage_category"]) ) 
+                            .attr("fill", d => categoryScale(d["Category"]) ) 
                             .attr("label", d => d["Beverage"])
-                            .attr("genre", d => d["Beverage_category"]);
+                            .attr("prep", d => d["Prep"])
+                            .attr("genre", d => d["Category"]);
 
                 circles.on("mouseover", function(event, d) {
                     d3.select(this)
@@ -425,8 +414,6 @@
                 click.classList.remove('clicked')
             }
         })
-
-
         }
         loadScatter();
     </script>
